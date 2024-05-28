@@ -7,6 +7,8 @@
       <input v-model="nextActivity" placeholder="Next Activity Name" />
       <button @click="updateActivities">Update Activities</button>
       <button @click="advanceActivity">Advance to Next Activity</button>
+      <button @click="add30Seconds">Add 30 seconds</button>
+      <button @click="remove30Seconds">Remove 30 seconds</button>
   
       <h2>Activity Queue</h2>
       <ul>
@@ -78,6 +80,14 @@
           this.nextActivity = this.activities.length > 0 ? this.activities[0].name : '';
           this.updateActivities();
         }
+      },
+      add30Seconds() {
+        this.currentDuration += 30;
+        this.updateActivities();
+      },
+      remove30Seconds() {
+        this.currentDuration = Math.max(0, this.currentDuration - 30); // Prevent negative duration
+        this.updateActivities();
       },
     },
   };
