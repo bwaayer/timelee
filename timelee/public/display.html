@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Timer</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; }
+    .timer { font-size: 5em; }
+  </style>
+</head>
+<body>
+  <h1 id="currentActivity">Current Activity</h1>
+  <div class="timer" id="timeRemaining">00:00</div>
+  <h2 id="nextActivity">Next Activity</h2>
+
+  <script>
+    let timeRemaining = 300; // Default: 5 minutes
+
+    function updateTimer() {
+      const minutes = Math.floor(timeRemaining / 60);
+      const seconds = timeRemaining % 60;
+      document.getElementById('timeRemaining').innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+      if (timeRemaining > 0) {
+        timeRemaining--;
+      }
+    }
+
+    setInterval(updateTimer, 1000);
+
+    const ws = new WebSocket('ws://localhost:3000');
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('Received message:', data);
+        document.getElementById('currentActivity').innerText = data.currentActivity;
+        document.getElementById('nextActivity').innerText = data.nextActivity;
+        timeRemaining = data.currentDuration || 300;
+      } catch (e) {
+        console.error('Invalid JSON received:', event.data);
+      }
+    };
+  </script>
+</body>
+</html>
