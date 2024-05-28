@@ -70,6 +70,8 @@
           activities: this.activities,
           currentIndex: this.currentIndex,
           timerPaused: this.timerPaused,
+          currentDuration: this.currentDuration,
+          startTime: this.startTime
         });
         this.ws.send(message);
       },
@@ -80,7 +82,15 @@
         });
         this.newActivityName = '';
         this.newActivityDuration = 60;
-        this.updateActivities();
+        // Send updated activities without affecting the timer
+        const message = JSON.stringify({
+          activities: this.activities,
+          currentIndex: this.currentIndex,
+          timerPaused: this.timerPaused,
+          currentDuration: this.currentDuration,
+          startTime: this.startTime
+        });
+        this.ws.send(message);
       },
       removeActivity(index) {
         if (index < this.currentIndex) {
@@ -165,6 +175,8 @@
           activities: this.activities,
           currentIndex: this.currentIndex,
           timerPaused: this.timerPaused,
+          currentDuration: this.currentDuration,
+          startTime: this.startTime
         });
         this.ws.send(message);
       }
