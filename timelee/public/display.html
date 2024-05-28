@@ -5,23 +5,103 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Service Timer</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; }
-    .timer { font-size: 5em; }
+    body { 
+      font-family: Arial, sans-serif; 
+      text-align: center; 
+      background-color: black; 
+      color: white; 
+      height: 100vh; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      margin: 0; 
+    }
+    .container {
+      display: table;
+      width: 100%;
+      height: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .row {
+      display: table-row;
+      border: 1px solid white;
+    }
+    .cell {
+      display: table-cell;
+      vertical-align: middle;
+      border: 1px solid white;
+      width: 100%;
+      height: 33%;
+      text-align: center;
+    }
+    .current-activity {
+      font-size: calc(5vw + 5vh);
+    }
+    .time-remaining {
+      font-size: calc(5vw + 5vh);
+      color: green;
+    }
+    .time-remaining.negative {
+      color: red;
+    }
+    .next-activity {
+      font-size: calc(3vw + 3vh);
+      text-align: left;
+      position: relative;
+    }
+    .next-label {
+      position: absolute;
+      top: 0;
+      left: 0;
+      font-size: 0.5em;
+      color: white;
+    }
+    .current-time {
+      font-size: calc(3vw + 3vh);
+    }
   </style>
 </head>
 <body>
-  <h1 id="currentActivity">Current Activity</h1>
-  <div class="timer" id="timeRemaining">00:00</div>
-  <h2 id="nextActivity">Next Activity</h2>
+  <div class="container">
+    <div class="row">
+      <div class="cell">
+        <div class="current-activity" id="currentActivity">Current Activity</div>
+      </div>
+      <div class="cell">
+        <div class="time-remaining" id="timeRemaining">00:00</div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="cell next-activity">
+        <span class="next-label">Next:</span>
+        <span id="nextActivity"></span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="cell current-time" id="currentTime"></div>
+    </div>
+  </div>
   
   <script>
     let timeRemaining = 300; // Default: 5 minutes
+    let timerPaused = false;
 
     function updateTimer() {
-      const minutes = Math.floor(timeRemaining / 60);
-      const seconds = timeRemaining % 60;
-      document.getElementById('timeRemaining').innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-      if (timeRemaining > 0) {
+      if (!timerPaused) {
+        const minutes = Math.floor(Math.abs(timeRemaining) / 60);
+        const seconds = Math.abs(timeRemaining) % 60;
+        const timeString = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        const timeElement = document.getElementById('timeRemaining');
+        
+        if (timeRemaining < 0) {
+          timeElement.classList.add('negative');
+          timeElement.innerText = `-${timeString}`;
+        } else {
+          timeElement.classList.remove('negative');
+          timeElement.innerText = timeString;
+        }
+        
         timeRemaining--;
       }
     }
@@ -31,17 +111,30 @@
     const ws = new WebSocket('ws://localhost:3000');
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      document.getElementById('currentActivity').innerText = data.currentActivity;
-      document.getElementById('nextActivity').innerText = data.nextActivity;
-      timeRemaining = data.currentDuration || 300;
+      document.getElementById('currentActivity').innerText = data.activities[data.currentIndex].name;
+      document.getElementById('nextActivity').innerText = data.activities.length > data.currentIndex + 1 ? data.activities[data.currentIndex + 1].name : 'No upcoming activities';
+      timeRemaining = data.currentDuration;
+      timerPaused = data.timerPaused;
 
       // Show the next activity in the queue if it exists
       if (data.activities && data.activities.length > 0) {
-        document.getElementById('nextActivity').innerText = data.activities[0].name;
+        document.getElementById('nextActivity').innerText = data.activities.length > data.currentIndex + 1 ? data.activities[data.currentIndex + 1].name : 'No upcoming activities';
       } else {
         document.getElementById('nextActivity').innerText = 'No upcoming activities';
       }
     };
+
+    function updateClock() {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+      document.getElementById('currentTime').innerText = 
+        `${hours < 10 ? '0' : ''}${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock(); // Initial call to display clock immediately
   </script>
 </body>
 </html>
