@@ -6,6 +6,18 @@
       <h2>Next Activity</h2>
       <input v-model="nextActivity" placeholder="Next Activity Name" />
       <button @click="updateActivities">Update Activities</button>
+      <button @click="advanceActivity">Advance to Next Activity</button>
+  
+      <h2>Activity Queue</h2>
+      <ul>
+        <li v-for="(activity, index) in activities" :key="index">
+          {{ activity.name }} - {{ activity.duration }} seconds
+          <button @click="removeActivity(index)">Remove</button>
+        </li>
+      </ul>
+      <input v-model="newActivityName" placeholder="New Activity Name" />
+      <input v-model.number="newActivityDuration" type="number" placeholder="Duration (seconds)" />
+      <button @click="addActivity">Add Activity</button>
     </div>
   </template>
   
@@ -16,6 +28,9 @@
         currentActivity: '',
         currentDuration: 300, // Default 5 minutes
         nextActivity: '',
+        newActivityName: '',
+        newActivityDuration: 60, // Default 1 minute
+        activities: [],
         ws: null,
       };
     },
@@ -25,14 +40,11 @@
         console.log('WebSocket connection established');
       };
       this.ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          this.currentActivity = data.currentActivity;
-          this.currentDuration = data.currentDuration;
-          this.nextActivity = data.nextActivity;
-        } catch (e) {
-          console.error('Invalid JSON received:', event.data);
-        }
+        const data = JSON.parse(event.data);
+        this.currentActivity = data.currentActivity;
+        this.currentDuration = data.currentDuration;
+        this.nextActivity = data.nextActivity;
+        this.activities = data.activities || [];
       };
     },
     methods: {
@@ -41,9 +53,31 @@
           currentActivity: this.currentActivity,
           currentDuration: this.currentDuration,
           nextActivity: this.nextActivity,
+          activities: this.activities,
         });
-        console.log('Sending message:', message);
         this.ws.send(message);
+      },
+      addActivity() {
+        this.activities.push({
+          name: this.newActivityName,
+          duration: this.newActivityDuration,
+        });
+        this.newActivityName = '';
+        this.newActivityDuration = 60;
+        this.updateActivities();
+      },
+      removeActivity(index) {
+        this.activities.splice(index, 1);
+        this.updateActivities();
+      },
+      advanceActivity() {
+        if (this.activities.length > 0) {
+          const next = this.activities.shift();
+          this.currentActivity = next.name;
+          this.currentDuration = next.duration;
+          this.nextActivity = this.activities.length > 0 ? this.activities[0].name : '';
+          this.updateActivities();
+        }
       },
     },
   };
@@ -64,9 +98,17 @@
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    margin-right: 10px;
   }
   button:hover {
     background-color: #45a049;
+  }
+  ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  li {
+    margin-bottom: 10px;
   }
   </style>
   

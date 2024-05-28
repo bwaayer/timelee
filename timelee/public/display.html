@@ -13,7 +13,7 @@
   <h1 id="currentActivity">Current Activity</h1>
   <div class="timer" id="timeRemaining">00:00</div>
   <h2 id="nextActivity">Next Activity</h2>
-
+  
   <script>
     let timeRemaining = 300; // Default: 5 minutes
 
@@ -30,14 +30,16 @@
 
     const ws = new WebSocket('ws://localhost:3000');
     ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('Received message:', data);
-        document.getElementById('currentActivity').innerText = data.currentActivity;
-        document.getElementById('nextActivity').innerText = data.nextActivity;
-        timeRemaining = data.currentDuration || 300;
-      } catch (e) {
-        console.error('Invalid JSON received:', event.data);
+      const data = JSON.parse(event.data);
+      document.getElementById('currentActivity').innerText = data.currentActivity;
+      document.getElementById('nextActivity').innerText = data.nextActivity;
+      timeRemaining = data.currentDuration || 300;
+
+      // Show the next activity in the queue if it exists
+      if (data.activities && data.activities.length > 0) {
+        document.getElementById('nextActivity').innerText = data.activities[0].name;
+      } else {
+        document.getElementById('nextActivity').innerText = 'No upcoming activities';
       }
     };
   </script>
