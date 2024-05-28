@@ -61,13 +61,15 @@
         this.activities = data.activities || [];
         this.startTime = data.startTime;
         this.currentIndex = data.currentIndex !== undefined ? data.currentIndex : 0;
+        this.timerPaused = data.timerPaused !== undefined ? data.timerPaused : false;
       };
     },
     methods: {
       updateActivities() {
         const message = JSON.stringify({
           activities: this.activities,
-          currentIndex: this.currentIndex
+          currentIndex: this.currentIndex,
+          timerPaused: this.timerPaused,
         });
         this.ws.send(message);
       },
@@ -92,6 +94,7 @@
           this.currentIndex += 1;
           this.currentDuration = this.activities[this.currentIndex].duration;
           this.startTime = Date.now();
+          this.timerPaused = false;
           this.updateActivitiesWithTimer();
         }
       },
@@ -100,6 +103,7 @@
           this.currentIndex -= 1;
           this.currentDuration = this.activities[this.currentIndex].duration;
           this.startTime = Date.now();
+          this.timerPaused = false;
           this.updateActivitiesWithTimer();
         }
       },
@@ -118,16 +122,24 @@
         this.updateActivitiesWithTimer();
       },
       pauseTimer() {
-        this.timerPaused = true;
+        if (!this.timerPaused) {
+          const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+          this.currentDuration -= elapsed; // adjust current duration to remaining time
+          this.timerPaused = true;
+          this.updateActivitiesWithTimer();
+        }
       },
       resumeTimer() {
-        this.timerPaused = false;
-        this.startTime = Date.now();
-        this.updateActivitiesWithTimer();
+        if (this.timerPaused) {
+          this.startTime = Date.now();
+          this.timerPaused = false;
+          this.updateActivitiesWithTimer();
+        }
       },
       restartTimer() {
         this.currentDuration = this.activities[this.currentIndex].duration;
         this.startTime = Date.now();
+        this.timerPaused = false;
         this.updateActivitiesWithTimer();
       },
       updateActivitiesWithTimer() {
@@ -144,13 +156,15 @@
         this.currentIndex = index;
         this.currentDuration = this.activities[this.currentIndex].duration;
         this.startTime = Date.now();
+        this.timerPaused = false;
         this.updateActivitiesWithTimer();
       },
       onReorder() {
         // Only update activities without affecting the timer
         const message = JSON.stringify({
           activities: this.activities,
-          currentIndex: this.currentIndex
+          currentIndex: this.currentIndex,
+          timerPaused: this.timerPaused,
         });
         this.ws.send(message);
       }
